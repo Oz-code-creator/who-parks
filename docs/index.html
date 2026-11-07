@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14213d">
+<title>מי חונה?</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body>
+<header>
+  <h1>מי חונה?</h1>
+  <button id="gear" aria-label="הגדרות">⚙️</button>
+</header>
+<main>
+  <section id="card" class="card" aria-live="polite">
+    <div id="big" class="big">🅿️</div>
+    <div id="who" class="who">טוען…</div>
+    <div id="meta" class="meta"></div>
+  </section>
+  <p class="ask">מי חונה עכשיו? לחצו כדי לעדכן:</p>
+  <div id="btns" class="btns"></div>
+  <p id="syncline" class="syncline"></p>
+  <button id="hint" class="hint" hidden>📲 כדי שגם הטלפון השני יראה, מחברים אותו. לחצו כאן.</button>
+</main>
+<div id="toast" class="toast" hidden><span id="toasttext"></span> <button id="undo">↩ בטל</button></div>
+<div id="sheet" class="sheet" hidden></div>
+<script src="app.js?v=1"></script>
+</body>
+</html>
