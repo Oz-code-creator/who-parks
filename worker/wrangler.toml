@@ -1,0 +1,4 @@
+# הגדרות פריסה (ראו .github/workflows/deploy-worker.yml). חיבור ה-KV (ROOMS) נוסף בזמן הפריסה.
+name = "who-parks"
+main = "worker.js"
+compatibility_date = "2026-01-01"

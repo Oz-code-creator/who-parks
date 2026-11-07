@@ -1,0 +1,37 @@
+# פריסה אוטומטית של ה-Worker ל-Cloudflare בכל שינוי בתיקיית worker.
+# סודות נדרשים ב-GitHub (Settings > Secrets and variables > Actions):
+#   CLOUDFLARE_API_TOKEN   טוקן עם הרשאת "Edit Cloudflare Workers" (כולל KV)
+#   CLOUDFLARE_ACCOUNT_ID  מזהה החשבון
+name: Deploy Worker
+on:
+  push:
+    branches: [main]
+    paths: ["worker/**", ".github/workflows/deploy-worker.yml"]
+  workflow_dispatch:
+concurrency: deploy-worker
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Deploy to Cloudflare
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ] || [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then echo "Missing CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID secrets"; exit 1; fi
+          API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/storage/kv/namespaces"
+          find_kv() { curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$API?per_page=100" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const j=JSON.parse(s);if(!j.success){console.error(s.slice(0,300));process.exit(2)}const n=(j.result||[]).find(x=>x.title==="who-parks-rooms");if(n)console.log(n.id)})'; }
+          KV_ID=$(find_kv)
+          if [ -z "$KV_ID" ]; then
+            curl -sS -X POST -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H "Content-Type: application/json" --data '{"title":"who-parks-rooms"}' "$API" >/dev/null
+            KV_ID=$(find_kv)
+          fi
+          [ -n "$KV_ID" ] || { echo "could not find or create KV namespace who-parks-rooms"; exit 1; }
+          printf '\n[[kv_namespaces]]\nbinding = "ROOMS"\nid = "%s"\n' "$KV_ID" >> wrangler.toml
+          npx --yes wrangler@4 deploy

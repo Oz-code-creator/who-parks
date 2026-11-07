@@ -146,7 +146,7 @@
     const err = h("div", { class: "err" });
     if (!S.sync) {
       const url = h("input", { type: "url", placeholder: "https://....workers.dev", dir: "ltr", autocomplete: "off" });
-      box.append(h("p", { class: "note" }, "כדי ששני הטלפונים יראו אותו דבר: מדביקים כאן את כתובת השרת (אותה כתובת שמופיעה בהגדרות ⚙️ של אפליקציית הטיול), ואז שולחים הזמנה לטלפון השני."), url,
+      box.append(h("p", { class: "note" }, "כדי ששני הטלפונים יראו אותו דבר: מדביקים כאן את כתובת השרת של "מי חונה?" (מקבלים אותה מ-Claude), ואז שולחים הזמנה לטלפון השני."), url,
         h("button", { class: "act", type: "button", on: { click: async () => {
           const u = url.value.trim().replace(/\/$/, "");
           if (!HOST_OK(u)) { err.textContent = "הכתובת צריכה להתחיל ב-https:// ולהסתיים ב-workers.dev"; return; }
