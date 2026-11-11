@@ -9,6 +9,7 @@
   const str = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
   const num = v => (Number.isFinite(v) && v >= 0 ? v : 0);
   const HOST_OK = u => { try { const x = new URL(u); return (x.protocol === "https:" && /\.workers\.dev$/.test(x.hostname)) || (x.hostname === "localhost" && location.hostname === "localhost"); } catch (e) { return false; } };
+  const DEFAULT_URL = "https://who-parks.ozsegall.workers.dev"; // כתובת ציבורית, לא סוד
   const CODE_OK = c => /^[a-z0-9]{10,40}$/.test(c || "");
 
   function h(tag, props, ...kids) {
@@ -145,8 +146,8 @@
     const box = h("div", {});
     const err = h("div", { class: "err" });
     if (!S.sync) {
-      const url = h("input", { type: "url", placeholder: "https://....workers.dev", dir: "ltr", autocomplete: "off" });
-      box.append(h("p", { class: "note" }, "כדי ששני הטלפונים יראו אותו דבר: מדביקים כאן את כתובת השרת של \"מי חונה?\" (מקבלים אותה מ-Claude), ואז שולחים הזמנה לטלפון השני."), url,
+      const url = h("input", { type: "url", value: DEFAULT_URL, placeholder: "https://....workers.dev", dir: "ltr", autocomplete: "off" });
+      box.append(h("p", { class: "note" }, "כדי ששני הטלפונים יראו אותו דבר: לוחצים על הכפתור למטה (הכתובת כבר מוכנה), ואז שולחים הזמנה לטלפון השני."), url,
         h("button", { class: "act", type: "button", on: { click: async () => {
           const u = url.value.trim().replace(/\/$/, "");
           if (!HOST_OK(u)) { err.textContent = "הכתובת צריכה להתחיל ב-https:// ולהסתיים ב-workers.dev"; return; }
