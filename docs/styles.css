@@ -33,3 +33,9 @@ main{max-width:520px;margin:0 auto}
 .act{display:block;width:100%;margin-top:10px;padding:14px;font-size:18px;font-weight:700;border-radius:14px;border:2px solid var(--acc);background:var(--acc);color:#fff;min-height:48px}
 .act.sec{background:none;color:var(--acc)}.act.danger{background:none;border-color:#b91c1c;color:#b91c1c}
 .note{color:var(--mut);font-size:15px;margin:4px 0}.err{color:#b91c1c;font-size:15px;margin:6px 0;min-height:20px}
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+.qbtn{border:2px solid var(--acc);background:none;color:var(--acc);border-radius:18px;min-height:76px;font-size:24px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:10px}
+.qbtn.park{background:var(--acc);color:#fff}
+.qbtn.on{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 18%,var(--card));color:var(--fg)}
+.qbtn .e{font-size:30px}.qbtn:active{transform:scale(.97)}
+.panel select{width:100%;font:inherit;font-size:18px;padding:12px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--fg)}

@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   const KEY = "who-parks-v1", GUEST = "guest", EMPTY = "empty";
-  const DEF = { cars: { c1: { n: "יונדאי", e: "🚙", u: 0 }, c2: { n: "סקודה", e: "🚗", u: 0 } }, cur: { w: EMPTY, note: "", by: "", t: 0, v: 0 }, me: "", sync: null };
+  const DEF = { cars: { c1: { n: "יונדאי", e: "🚙", u: 0 }, c2: { n: "סקודה", e: "🚗", u: 0 } }, cur: { w: EMPTY, note: "", by: "", t: 0, v: 0 }, me: "", mine: "", sync: null };
   const $ = id => document.getElementById(id);
   const clone = o => JSON.parse(JSON.stringify(o));
   const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
@@ -31,7 +31,7 @@
     try {
       const r = JSON.parse(localStorage.getItem(KEY)) || {};
       Object.keys(s.cars).forEach(id => { const c = cleanCar(id, (r.cars || {})[id]); if (c) s.cars[id] = c; });
-      s.cur = cleanCur(r.cur, s.cars) || s.cur; s.me = str(r.me, 30);
+      s.cur = cleanCur(r.cur, s.cars) || s.cur; s.me = str(r.me, 30); s.mine = r.mine === "c1" || r.mine === "c2" ? r.mine : "";
       if (r.sync && HOST_OK(r.sync.url) && CODE_OK(r.sync.code)) s.sync = { url: r.sync.url.replace(/\/$/, ""), code: r.sync.code };
     } catch (e) { /* ignore */ }
     return s;
@@ -60,6 +60,10 @@
     $("meta").textContent = c.v ? [since(c.t), c.by ? "עודכן ע״י " + c.by : ""].filter(Boolean).join(" · ") : "עוד לא סומן";
     const opts = [["c1", S.cars.c1.e, S.cars.c1.n], ["c2", S.cars.c2.e, S.cars.c2.n], [GUEST, "👤", "אורח"], [EMPTY, "🅿️", "ריקה"]];
     $("btns").replaceChildren(...opts.map(([w, e, n]) => h("button", { class: "btn" + (c.w === w ? " on" : ""), type: "button", dataset: { w }, on: { click: () => choose(w) } }, h("span", { class: "e" }, e), n)));
+    const mine = has(S.cars, S.mine) ? S.cars[S.mine] : null;
+    $("quick").replaceChildren(
+      h("button", { class: "qbtn park" + (mine && c.w === S.mine ? " on" : ""), type: "button", on: { click: park } }, h("span", { class: "e" }, mine ? mine.e : "🚗"), "חניתי"),
+      h("button", { class: "qbtn" + (c.w === EMPTY && c.v ? " on" : ""), type: "button", on: { click: leave } }, h("span", { class: "e" }, "🅿️"), "יצאתי"));
     $("hint").hidden = !!S.sync;
     $("syncline").textContent = S.sync ? syncText : "מצב מקומי בלבד (לא מחובר לטלפון השני)";
   }
@@ -95,6 +99,24 @@
     clearTimeout(toastTimer); toastTimer = setTimeout(hideToast, 6000);
   }
   function hideToast() { $("toast").hidden = true; clearTimeout(toastTimer); }
+  // פעולות מהירות: "חניתי" (הרכב שלי) ו"יצאתי"
+  function park() {
+    if (!S.me) return askName(park);
+    if (!has(S.cars, S.mine)) return pickMine(park);
+    if (S.cur.w !== S.mine) setCur(S.mine);
+  }
+  function leave() {
+    if (!S.me) return askName(leave);
+    if (S.cur.w === EMPTY) return;
+    if (has(S.cars, S.cur.w) && has(S.cars, S.mine) && S.cur.w !== S.mine && !confirm("הרכב של השני חונה עכשיו. לסמן שהחנייה ריקה?")) return;
+    setCur(EMPTY);
+  }
+  function pickMine(then) {
+    const pick = id => () => { S.mine = id; save(); render(); close(); then && then(); };
+    open(h("h2", {}, "באיזה רכב אתם חונים?"), h("p", { class: "note" }, "כך כפתור \"חניתי\" ידע מה לסמן. אפשר לשנות בהמשך ב-⚙️."),
+      ...["c1", "c2"].map(id => h("button", { class: "act", type: "button", on: { click: pick(id) } }, S.cars[id].e + " " + S.cars[id].n)),
+      h("button", { class: "act sec", type: "button", on: { click: close } }, "ביטול"));
+  }
   function choose(w) {
     if (!S.me) return askName(() => choose(w));
     if (w === GUEST) return guestSheet();
@@ -130,16 +152,19 @@
       const n = h("input", { type: "text", maxLength: 20, value: S.cars[id].n, "aria-label": "שם הרכב" });
       return { id, e, n, row: h("div", { class: "row" }, e, n) };
     });
+    const mineSel = h("select", { "aria-label": "הרכב שלי" }, h("option", { value: "" }, "לא נבחר"), ...Object.keys(S.cars).map(id => h("option", { value: id }, S.cars[id].e + " " + S.cars[id].n)));
+    mineSel.value = S.mine;
     const msg = h("div", { class: "err" });
     const saveBtn = h("button", { class: "act", type: "button", on: { click: () => {
       const me = name.value.trim(); if (!me) { msg.textContent = "צריך שם"; return; }
-      S.me = me.slice(0, 30);
+      S.me = me.slice(0, 30); S.mine = mineSel.value;
       carRows.forEach(r => { const n = r.n.value.trim().slice(0, 20), e = r.e.value.trim().slice(0, 8), c = S.cars[r.id]; if ((n && n !== c.n) || (e && e !== c.e)) S.cars[r.id] = { n: n || c.n, e: e || c.e, u: Date.now() }; });
       save(); render(); Sync.now(); close();
     } } }, "שמור");
     open(h("h2", {}, "⚙️ הגדרות"),
       h("label", {}, "השם שלי"), name,
       h("h3", {}, "הרכבים"), h("p", { class: "note" }, "מחליפים רכב? משנים כאן את השם והאייקון, וזה יתעדכן גם בטלפון השני."), carRows.map(r => r.row),
+      h("h3", {}, "הרכב שלי"), h("p", { class: "note" }, "בטלפון הזה בלבד. משמש את כפתור \"חניתי\"."), mineSel,
       msg, saveBtn, h("h3", {}, "סנכרון והתראות"), syncSection(), h("button", { class: "act sec", type: "button", on: { click: close } }, "סגור"));
   }
   function syncSection() {
@@ -282,6 +307,12 @@
     navigator.serviceWorker.register("sw.js").catch(() => {});
     navigator.serviceWorker.addEventListener("message", e => { if (e.data && e.data.type === "refresh") Sync.now(); });
   }
-  render(); Sync.start(); handleJoin();
+  function runAction() { // קיצורי דרך מהאייקון (?a=park / ?a=leave)
+    const a = new URLSearchParams(location.search).get("a");
+    if (!a) return;
+    try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) { /* ignore */ }
+    if (sheet.hidden) { if (a === "park") park(); else if (a === "leave") leave(); }
+  }
+  render(); Sync.start(); handleJoin(); runAction();
   if (!S.me && sheet.hidden) askName(); // פעם ראשונה: מבקשים שם
 })();

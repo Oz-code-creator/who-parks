@@ -42,6 +42,18 @@ const notices = await (await fetch("http://localhost:8780/__log")).json();
 assert.deepEqual(notices.map(n => n.title).sort(), ["🚐 טויוטה חונה", "🚙 יונדאי חונה", "🚗 סקודה חונה", "🅿️ החנייה התפנתה", "👤 אורח חונה: אמא"].sort());
 assert.ok(notices.some(n => n.title === "🚗 סקודה חונה" && n.body === "עודכן ע״י אשתי")); assert.equal(notices.filter(n => n.title === "🅿️ החנייה התפנתה").length, 1, "undo must not notify");
 console.log("notifications:", notices.map(n => n.title).join(" | "));
+// ---- כפתורים מהירים: חניתי / יצאתי + הרכב שלי + קיצורי דרך ----
+const who = P => P.textContent("#who"), waitWho = (P, t) => P.waitForFunction(t2 => document.getElementById("who").textContent === t2, t, { timeout: 9000 });
+await A.click(".qbtn.park"); await A.waitForSelector("text=באיזה רכב אתם חונים?"); await A.click(".panel .act:has-text('יונדאי')");
+await waitWho(A, "יונדאי"); await waitWho(B, "יונדאי"); console.log("quick park (picked my car) synced ✔");
+await A.click(".qbtn:not(.park)"); await waitWho(A, "החנייה ריקה"); await waitWho(B, "החנייה ריקה"); console.log("quick leave synced ✔");
+await B.click("#gear"); await B.selectOption(".panel select", "c2"); await B.click("text=שמור");
+await B.click(".qbtn.park"); await waitWho(B, "טויוטה"); await waitWho(A, "טויוטה");
+A.removeAllListeners("dialog"); A.once("dialog", d => d.dismiss()); await A.click(".qbtn:not(.park)"); await A.waitForTimeout(500); assert.equal(await who(A), "טויוטה"); console.log("leave asks before clearing other's car ✔");
+A.once("dialog", d => d.accept()); await A.click(".qbtn:not(.park)"); await waitWho(A, "החנייה ריקה"); await waitWho(B, "החנייה ריקה");
+await A.goto("http://localhost:8781/index.html?a=park"); await waitWho(A, "יונדאי"); assert.ok(!A.url().includes("a=park")); await waitWho(B, "יונדאי"); console.log("shortcut ?a=park ✔");
+await A.goto("http://localhost:8781/index.html?a=leave"); await waitWho(A, "החנייה ריקה"); console.log("shortcut ?a=leave ✔");
+const man = await (await fetch("http://localhost:8781/manifest.webmanifest")).json(); assert.deepEqual(man.shortcuts.map(x => x.url), ["./index.html?a=park", "./index.html?a=leave"]);
 console.log("errors:", JSON.stringify(errors));
 if (errors.length) { console.log("FAIL"); process.exit(1); }
 await b.close(); process.exit(0);
